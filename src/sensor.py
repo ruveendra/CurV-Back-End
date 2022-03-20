@@ -1,7 +1,10 @@
+from decimal import Decimal
+
 from flask import Blueprint, request, jsonify
+from sqlalchemy import func
 
 from src.constances.http_status_code import HTTP_200_OK, HTTP_400_BAD_REQUEST
-from src.database import User, db, SensorData, Device
+from src.database import User, db, SensorData, Device, MainSensor
 
 sensor = Blueprint("sensor", __name__, url_prefix="/api/v1/sensor")
 
@@ -24,10 +27,20 @@ def data_sensor():
     if not ampere:
         return jsonify({'error': "No value for ampere found"}), HTTP_400_BAD_REQUEST
 
-    sensor_data = SensorData(data=ampere, device_id=device_id, user_id=user.id)
+    main_sensor = MainSensor.query.filter_by(user_id=user.id).first()
+
+    power = float(main_sensor.voltage) * float(ampere)
+    kilo_watt_per_10_sec = (power * 0.00277778) / 1000
+    # data = kilo_watt_per_10_sec * 360
+    kilo_watt_round = round(kilo_watt_per_10_sec, 8)
+
+    sensor_data = SensorData(device_id=device_id, voltage=main_sensor.voltage, ampere=ampere,
+                             kw_sec=kilo_watt_round, user_id=user.id)
+
     db.session.add(sensor_data)
     db.session.commit()
 
     return jsonify({
-        "message":"success"
+        "message": "success"
+
     }), HTTP_200_OK

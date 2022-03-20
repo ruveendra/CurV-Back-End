@@ -112,17 +112,10 @@ def edit_device(id):
 
         }), HTTP_404_NOT_FOUND
 
-    device_name = request.json['device_name']
+    for key in request.json:
+        setattr(device, key, request.json[key])
 
-    if not device_name:
-        return jsonify({
-            'error': "No new device name found"
-
-        }), HTTP_400_BAD_REQUEST
-
-    device.device_name = device_name
     db.session.commit()
-
     return jsonify({
         'id': device.id,
         'device_id': device.device_id,
@@ -130,8 +123,7 @@ def edit_device(id):
         'device_status': device.device_status,
         'device_switch': device.device_switch,
         'status': device.status,
-
-    }), HTTP_200_OK
+        }), HTTP_200_OK
 
 
 @devices.delete('/<int:id>')
@@ -181,18 +173,6 @@ def get_usage():
     }), HTTP_200_OK
 
 
-@devices.get('/get-usage-monthly')
-@jwt_required()
-def get_usage_monthly():
-    return "Still pending"
-
-
-@devices.get('/get-per-device/<int:id>')
-@jwt_required()
-def get_per_day(id):
-    return "Still pending"
-
-
 @devices.get('/switch')
 def switch():
     api_key = request.args.get('api_key')
@@ -233,18 +213,22 @@ def add_new_device():
     }), HTTP_200_OK
 
 
-@devices.get('/online-status/<int:id>')
+@devices.get('/get-online-status/<int:id>')
 @jwt_required()
 def check_online_status(id):
     user_id = get_jwt_identity()
     device = Device.query.filter_by(id=id).first()
+    status = device.device_status
+    device.device_status = False
+    db.session.commit()
 
     return jsonify({
-        "status": device.status,
+        "status": status,
 
     }), HTTP_200_OK
 
 
+# ------ ESP8266 Endpoint -------
 @devices.get('/set-online-status')
 def set_device_online_status():
     api_key = request.args.get('api_key')
@@ -275,7 +259,7 @@ def set_device_online_status():
     device = Device.query.filter_by(device_id=device_id).first()
 
     if device:
-        device.status = status
+        device.device_status = bool(status)
         db.session.commit()
 
         return jsonify({
@@ -290,8 +274,9 @@ def set_device_online_status():
         }), HTTP_200_OK
 
 
-@devices.get("/watch-switch-status")
-def watch_device_switch():
+# ------ ESP8266 Endpoint -------
+@devices.get("/read-switch-status")
+def read_device_switch():
     api_key = request.args.get('api_key')
     device_id = request.args.get('device_id')
 
@@ -312,5 +297,35 @@ def watch_device_switch():
 
     return jsonify({
         "data": device.device_switch
+
+    }), HTTP_200_OK
+
+
+@devices.get('/real-time-stats/<int:id>')
+@jwt_required()
+def real_time_stats(id):
+
+    user_id = get_jwt_identity()
+    device = Device.query.filter_by(id=id).first()
+
+    if not device:
+        return jsonify({
+            'error': "No device found"
+
+        }), HTTP_400_BAD_REQUEST
+
+    today = date.today()
+
+    sql = "SELECT *, (SELECT SUM(kw_sec) FROM sensor_data as sd WHERE sd.created_at >='{}')  as kw_sum FROM " \
+          "sensor_data WHERE device_id='{}' ORDER BY created_at DESC LIMIT 1".format(today, device.device_id )
+
+    sensor_data = db.engine.execute(sql).first()
+    power = sensor_data.voltage * sensor_data.ampere
+
+    return jsonify({
+        'voltage': sensor_data.voltage if sensor_data.voltage else 0,
+        'ampere': sensor_data.ampere if sensor_data.ampere else 0,
+        'power': power if power else 0,
+        'kwh': sensor_data.kw_sum if sensor_data.kw_sum else 0
 
     }), HTTP_200_OK

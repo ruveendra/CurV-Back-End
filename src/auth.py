@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from src import app
 from src.constances.http_status_code import HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT, HTTP_201_CREATED, \
     HTTP_401_UNAUTHORIZED, HTTP_200_OK, HTTP_404_NOT_FOUND
 
@@ -42,22 +41,20 @@ def login():
     }), HTTP_401_UNAUTHORIZED
 
 
-@auth.get("/me")
-# @jwt_required()
-def me():
-    url = request.args.get('test')
-    apikey = request.args.get('apikey')
-    # user_id = get_jwt_identity()
+@auth.get("/verify")
+@jwt_required()
+def verify():
+    user_id = get_jwt_identity()
+    if user_id:
 
-    user = User.query.filter_by(api_key=apikey).first()
+        return jsonify({
+            'message': 'success',
+        }), HTTP_200_OK
 
-    return jsonify({
-        # 'username': user.username,
-        # 'email': user.email,
-        # 'url': url,
-        'apikey': apikey
-
-    }), HTTP_200_OK
+    else:
+        return jsonify({
+            'message': 'unsuccessful',
+        }), HTTP_400_BAD_REQUEST
 
 
 @auth.get('/token/refresh')
@@ -76,7 +73,6 @@ def refresh_user_token():
 @auth.patch('/password-change')
 @jwt_required()
 def password_change():
-
     current_password = request.json['current_password']
     new_password = request.json['new_password']
     confirm_new_password = request.json['confirm_new_password']
@@ -132,27 +128,12 @@ def password_change():
     }), HTTP_200_OK
 
 
-@auth.put('/user-email-update')
-@auth.patch('/user-email-update')
+@auth.put('/user-update')
+@auth.patch('/user-update')
 @jwt_required()
-def user_email_update():
-
+def user_update():
     current_user = get_jwt_identity()
     user = User.query.filter_by(id=current_user).first()
-
-    email = request.json['email']
-
-    if not validators.email(email):
-        return jsonify({
-            'error': "Invalid Email"
-
-        }), HTTP_400_BAD_REQUEST
-
-    if not User.query.filter_by(email=email).first() is None:
-        return jsonify({
-            'error': "Email is taken"
-
-        }), HTTP_409_CONFLICT
 
     if not user:
         return jsonify({
@@ -160,47 +141,43 @@ def user_email_update():
 
         }), HTTP_404_NOT_FOUND
 
-    user.email = email
+    for key in request.json:
+
+        if key == "email":
+            email = request.json[key]
+
+            if not validators.email(email):
+                return jsonify({
+                    'error': "Invalid Email"
+
+                }), HTTP_400_BAD_REQUEST
+
+            if not User.query.filter_by(email=email).first() is None:
+                return jsonify({
+                    'error': "Email is taken"
+
+                }), HTTP_409_CONFLICT
+
+        if key == "username":
+            username = request.json[key]
+
+            if not username.isalnum() or " " in username:
+                return jsonify({
+                    'error': "Username should be alphanumeric, also no spaces"
+
+                }), HTTP_400_BAD_REQUEST
+
+            if not User.query.filter_by(username=username).first() is None:
+                return jsonify({
+                    'error': "username is taken"
+
+                }), HTTP_409_CONFLICT
+
+        setattr(user, key, request.json[key])
+
     db.session.commit()
 
     return jsonify({
         'message': "update successful",
-
-    }), HTTP_200_OK
-
-
-@auth.put('/user-username-update')
-@auth.patch('/user-username-update')
-@jwt_required()
-def user_update():
-
-    current_user = get_jwt_identity()
-    user = User.query.filter_by(id=current_user).first()
-
-    username = request.json['username']
-
-    if not username.isalnum() or " " in username:
-        return jsonify({
-            'error': "Username should be alphanumeric, also no spaces"
-
-        }), HTTP_400_BAD_REQUEST
-
-    if not User.query.filter_by(username=username).first() is None:
-        return jsonify({
-            'error': "username is taken"
-
-        }), HTTP_409_CONFLICT
-
-    if not user:
-        return jsonify({
-            'message': "No user found"
-
-        }), HTTP_404_NOT_FOUND
-
-    user.username = username
-    db.session.commit()
-
-    return jsonify({
-        'message': "Update successful",
 
     }), HTTP_200_OK
