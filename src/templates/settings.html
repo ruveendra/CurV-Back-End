@@ -1,0 +1,8 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h1>Setting</h1>
+    {% for user in users %}
+        <h2>{{user.user}}</h2>
+        <h2>{{user.age}}</h2>
+    {% endfor %}
+{% endblock content%}

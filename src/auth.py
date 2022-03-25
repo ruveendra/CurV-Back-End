@@ -8,6 +8,7 @@ import validators
 from src.database import User, db
 from flask_jwt_extended import jwt_required, create_access_token, create_refresh_token, get_jwt_identity
 
+
 auth = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 
 

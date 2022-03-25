@@ -55,7 +55,7 @@ def handle_devices():
 
     else:
 
-        devices = Device.query.filter_by(user_id=current_user, status=1)
+        devices = Device.query.filter_by(user_id=current_user)
         # devices = db.engine.execute("SELECT * FROM device")
 
         data = []
@@ -173,18 +173,26 @@ def get_usage():
     }), HTTP_200_OK
 
 
-@devices.get('/switch')
-def switch():
-    api_key = request.args.get('api_key')
-    device_id = request.args.get('device_id')
-    switch_status = request.args.get('switch')
-    online_status = request.args.get('status')
+@devices.get('/device-switch/<int:id>')
+@jwt_required()
+def device_switch(id):
 
-    device = Device.query.filter_by(device_id=device_id).first()
+    status = request.json['status']
+
+    if status == 'true' or status == 'True':
+        switch_status = True
+
+    elif status == 'false' or status == 'False':
+        switch_status = False
+    else:
+        return jsonify({
+            "error": "Please sent True or False only"
+        }), HTTP_400_BAD_REQUEST
+
+    device = Device.query.filter_by(id=id).first()
 
     if device:
         device.device_switch = switch_status
-        device.device_status = online_status
         db.session.commit()
         status = "Updated Successfully"
         status_code = HTTP_200_OK
@@ -193,7 +201,7 @@ def switch():
         status_code = HTTP_404_NOT_FOUND
 
     return jsonify({
-        "status": status
+        "message": status
     }), status_code
 
 
@@ -238,6 +246,16 @@ def set_device_online_status():
     user = User.query.filter_by(api_key=api_key).first()
     device = Device.query.filter_by(device_id=device_id).first()
 
+    if status == 'true' or status == 'True':
+        online_status = True
+
+    elif status == 'false' or status == 'False':
+        online_status = False
+    else:
+        return jsonify({
+            "error": "Please sent True or False only"
+        }), HTTP_400_BAD_REQUEST
+
     if not user:
         return jsonify({
             'error': "Authentication failed"
@@ -259,7 +277,7 @@ def set_device_online_status():
     device = Device.query.filter_by(device_id=device_id).first()
 
     if device:
-        device.device_status = bool(status)
+        device.device_status = online_status
         db.session.commit()
 
         return jsonify({

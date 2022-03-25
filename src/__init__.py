@@ -1,4 +1,5 @@
 from flask import Flask
+
 from src.user import user
 from src.auth import auth
 from src.devices import devices
@@ -6,6 +7,7 @@ from src.main_sensor import mainsensor
 from src.sensor import sensor
 from src.database import db
 from flask_jwt_extended import JWTManager
+from src.admin import admin
 
 
 def create_app(test_config=None):
@@ -14,8 +16,8 @@ def create_app(test_config=None):
     if test_config is None:
 
         app.config['SECRET_KEY'] = "dev"
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:XC.Kjs5563@localhost:3306/smartmeter'
-        # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:1@localhost:3306/smartmeter'
+        # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:XC.Kjs5563@localhost:3306/smartmeter'
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:''@localhost:3306/smartmeter'
 
         # app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
         # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("SQLALCHEMY_DB_URI")
@@ -37,9 +39,15 @@ def create_app(test_config=None):
     JWTManager(app)
 
     app.register_blueprint(auth)
+    app.register_blueprint(admin)
     app.register_blueprint(devices)
     app.register_blueprint(mainsensor)
     app.register_blueprint(sensor)
     app.register_blueprint(user)
 
     return app
+
+
+def current_app():
+    return None
+

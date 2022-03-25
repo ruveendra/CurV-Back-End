@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h1>User Management</h1>
+    <div class="conatiner-fluid">
+        <div class="row">
+            <div class="col-sm-12">
+                {% for user in users %}
+                <div class="card">
+                  <div class="card-body">
+                      <div class="row">
+                          <div class="col-sm-9">
+                              <h5>{{user.id}}</h5>
+                            <h5>{{user.username}}</h5>
+                          </div>
+                          <div class="col-sm-3">
+                              <button type="button" class="btn btn-primary">Update</button>
+                              {% if user.status == 1%}
+                                <button type="button" class="btn btn-danger">Deactivate</button>
+                              {% else %}
+                                <button type="button" class="btn btn-secondary">Activate</button>
+                              {% endif %}
+                          </div>
+                      </div>
+
+
+
+                  </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+{% endblock content%}
