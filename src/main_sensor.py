@@ -29,18 +29,18 @@ def main_sensor():
     if not ampere:
         return jsonify({'error': "No value for ampere found"}), HTTP_400_BAD_REQUEST
 
-    mainsensor = MainSensor.query.filter_by(device_id=device_id).first()
+    # mainsensor = MainSensor.query.filter_by(device_id=device_id).first()
 
-    if mainsensor:
+    # if mainsensor:
         # update
-        mainsensor.voltage = voltage
-        mainsensor.ampere = ampere
-        db.session.commit()
-    else:
+        # mainsensor.voltage = voltage
+        # mainsensor.ampere = ampere
+        # db.session.commit()
+    # else:
         # insert
-        mainsensor = MainSensor(device_id=device_id, voltage=voltage, ampere=ampere, user_id=user.id)
-        db.session.add(mainsensor)
-        db.session.commit()
+    mainsensor = MainSensor(device_id=device_id, voltage=voltage, ampere=ampere, user_id=user.id)
+    db.session.add(mainsensor)
+    db.session.commit()
 
     return jsonify({
         "message": "success"

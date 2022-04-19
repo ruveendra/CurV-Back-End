@@ -96,3 +96,8 @@ class Admin(db.Model, UserMixin):
 
     def __repr__(self):
         return 'Admin>>> {self.id}'
+
+class Setting(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    setting = db.Column(db.String(100), unique=True, nullable=False)
+    value = db.Column(db.String(255), unique=True, nullable=False)
