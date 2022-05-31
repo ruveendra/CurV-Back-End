@@ -66,10 +66,10 @@ def set_setting():
 
 @settings.get('/offpeak-set')
 def offpeak_setting():
-    data = {
+    data = [{
         "offpeak_start": "22",
         "offpeak_end": "06",
-    }
+    }]
     data_json = json.dumps(data)
 
     settings = Setting.query.filter_by(setting="off_peak_values").first()

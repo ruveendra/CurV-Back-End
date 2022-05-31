@@ -97,7 +97,26 @@ class Admin(db.Model, UserMixin):
     def __repr__(self):
         return 'Admin>>> {self.id}'
 
+
 class Setting(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    setting = db.Column(db.String(100), unique=True, nullable=False)
-    value = db.Column(db.String(255), unique=True, nullable=False)
+    setting = db.Column(db.String(100), nullable=False)
+    value = db.Column(db.String(255), nullable=False)
+
+
+class Jobtbl(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    queue_jobID = db.Column(db.String(100), nullable=True)
+    job_start_time = db.Column(db.DateTime, nullable=True)
+    job_end_time = db.Column(db.DateTime,  nullable=True)
+    job_status = db.Column(db.String(10), nullable=True)
+    # job_error = db.Column(db.String(200), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+
+
+class Predictions(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(100), nullable=False)
+    value = db.Column(db.Text, nullable=False)

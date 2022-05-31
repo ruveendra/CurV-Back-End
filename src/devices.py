@@ -144,35 +144,6 @@ def delete_device(id):
     return jsonify({}), HTTP_204_NO_CONTENT
 
 
-@devices.get('/get-usage-day')
-@jwt_required()
-def get_usage():
-    # type = request.args.get('type')
-    # start = request.args.get('start')
-    # end = request.args.get('end')
-
-    start = '2022-03-01'
-    end = '2022-03-31'
-
-    sql = "SELECT * FROM sensor_data WHERE created_at >= '{}' AND created_at <= '{}' AND user_id = 1".format(start, end)
-
-    # data = SensorData.query.filter(SensorData.created_at >= start, SensorData.created_at >= end)
-    sensor_data = db.engine.execute(sql)
-
-    data = []
-    device_id = 0
-    ampere = 0
-    power = 0
-
-    for item in sensor_data:
-        power = float(power) + item.kw_sec
-
-    return jsonify({
-        'power': power
-
-    }), HTTP_200_OK
-
-
 @devices.put('/device-switch/<int:id>')
 @devices.patch('/device-switch/<int:id>')
 @jwt_required()
@@ -336,7 +307,17 @@ def real_time_stats(id):
     sql = "SELECT *, (SELECT SUM(kw_sec) FROM sensor_data as sd WHERE sd.created_at >='{}')  as kw_sum FROM " \
           "sensor_data WHERE device_id='{}' ORDER BY created_at DESC LIMIT 1".format(today, device.device_id)
 
+
     sensor_data = db.engine.execute(sql).first()
+
+    if not sensor_data:
+        return jsonify({
+            'voltage': 0,
+            'ampere': 0,
+            'power': 0,
+            'kwh': 0
+        }), HTTP_200_OK
+
     power = sensor_data.voltage * sensor_data.ampere
     print(sensor_data.ampere)
 
@@ -369,61 +350,3 @@ def chart_test():
     }), HTTP_200_OK
 
 
-@devices.get('/chart-test-year/')
-def chart_test_year():
-    data = [
-        {"date": "2000", "value": 800.0},
-        {"date": "2001", "value": 200.0},
-        {"date": "2002", "value": 900.0},
-        {"date": "2003", "value": 600.0},
-        {"date": "2004", "value": 200.0},
-        {"date": "2005", "value": 700.0},
-        {"date": "2006", "value": 300.0},
-        {"date": "2007", "value": 100.0},
-        {"date": "2008", "value": 100.0},
-    ]
-
-    return jsonify({
-        "data": data,
-
-    }), HTTP_200_OK
-
-
-@devices.get('/chart-test-mothly-cost')
-def chart_test_mothly_cost():
-    data = [
-        {"date": "2009-01", "value": 800.0, "cost":  70},
-        {"date": "2009-05", "value": 200.0, "cost":  90},
-        {"date": "2009-09", "value": 900.0, "cost":  50},
-        {"date": "2009-07", "value": 600.0, "cost":  30},
-        {"date": "2009-03", "value": 200.0, "cost":  40},
-        {"date": "2009-07", "value": 700.0, "cost":  70},
-        {"date": "2009-09", "value": 300.0, "cost":  80},
-        {"date": "2009-08", "value": 100.0, "cost":  20},
-        {"date": "2009-05", "value": 100.0, "cost":  10},
-    ]
-
-    return jsonify({
-        "data": data,
-
-    }), HTTP_200_OK
-
-
-@devices.get('/chart-test-year-cost')
-def chart_test_year_cost():
-    data = [
-        {"date": "2009", "value": 800.0, "cost":  70},
-        {"date": "2010", "value": 200.0, "cost":  90},
-        {"date": "2011", "value": 900.0, "cost":  50},
-        {"date": "2012", "value": 600.0, "cost":  30},
-        {"date": "2013", "value": 200.0, "cost":  40},
-        {"date": "2014", "value": 700.0, "cost":  70},
-        {"date": "2015", "value": 300.0, "cost":  80},
-        {"date": "2016", "value": 100.0, "cost":  20},
-        {"date": "2017", "value": 100.0, "cost":  10},
-    ]
-
-    return jsonify({
-        "data": data,
-
-    }), HTTP_200_OK

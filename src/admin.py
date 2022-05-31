@@ -1,11 +1,14 @@
+import json
+
 from flask import Blueprint, request, jsonify, render_template, url_for, flash, redirect
 from flask_login import login_user, current_user, logout_user, login_required
 from werkzeug.security import check_password_hash
 
-from src.database import Admin, User
+from src.database import Admin, User, Setting, db
 from src.forms import LoginForm
 
 from src.constances.http_status_code import HTTP_200_OK, HTTP_400_BAD_REQUEST
+
 # from src.database import User, db, SensorData, Device, MainSensor, Admin
 
 admin = Blueprint("admin", __name__)
@@ -59,4 +62,41 @@ def admin_users():
 @admin.route('/settings')
 @login_required
 def admin_settings():
-    return render_template('settings.html', title='settings', active='users')
+    setting_cost = Setting.query.filter_by(setting="cost_values").first()
+    cost_val = json.loads(setting_cost.value)
+
+    settings_peak = Setting.query.filter_by(setting="off_peak_values").first()
+    off_peak_val = json.loads(settings_peak.value)
+
+    return render_template('settings.html', title='settings', active='users', cost_val=cost_val, off_peak_val=off_peak_val)
+
+
+@admin.route('/settings/cost-update', methods=['POST'])
+@login_required
+def cost_update():
+    print(request.data)
+
+    settings = Setting.query.filter_by(setting="cost_values").first()
+    settings.value = request.data
+    db.session.commit()
+
+    flash("Updated Successfully.", 'success')
+    # return redirect('/settings')
+    return jsonify({
+        "msg": "true"
+    })
+
+@admin.route('/settings/offpeak-update', methods=['POST'])
+@login_required
+def offpeak_update():
+    print(request.data)
+
+    settings = Setting.query.filter_by(setting="off_peak_values").first()
+    settings.value = request.data
+    db.session.commit()
+
+    flash("Updated Successfully.", 'success')
+    # return redirect('/settings')
+    return jsonify({
+        "msg": "true"
+    })
